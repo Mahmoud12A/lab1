@@ -12,7 +12,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(tidyverse) 
 library(data.table)
 library(rworldmap) 
@@ -33,32 +33,25 @@ votes <- read.csv(paste0(url_base, "votes.csv"))
 
 ## Question 1: Data Exploration
 
-### Part A: Dataset Overview
+### A
 In this section, we conduct an initial exploration of the Eurovision datasets. The `head()` function allows us to view the first few records to understand the data's format, while the `str()` (structure) function provides a technical summary of the variables, including their data types (numeric, character, etc.) and the overall dimensions of the dataframe. This step is crucial for identifying potential data cleaning needs before proceeding with the analysis.
 
 #### Contestants Data
-```{r A.1_contestants}
-head(contestants, 5) %>% select(-lyrics,-youtube_url) %>%
-  kable(caption = "First 5 rows of Contestants dataset")
-```
-
-```{r A.1_contestants_str}
-str(contestants)
+```{r A.1_contestants,echo=FALSE}
+head(contestants,5) %>% select(year,points_final,points_tele_final,points_jury_final,place_final,to_country,song) %>% 
+ kable(caption = "First 5 rows of Contestants dataset")
 ```
 
 #### Votes Data
 ```{r A.1_votes}
 head(votes, 5) %>% 
-  kable(caption = "First 5 rows of Votes dataset")
-```
-
-```{r A.1_votes_str}
+kable(caption = "First 5 rows of Votes dataset")
 str(votes)
 ```
 
 ---
 
-### b.
+### B.
 
 In this step, we filter the dataset to display Israel's 10 most recent appearances in the Eurovision final, excluding years where they did not qualify. We sort the data by year in descending order.
 
@@ -87,6 +80,7 @@ contestants_long <- contestants %>%
                names_to = "Source", 
                values_to = "Points")
 
+
 head(contestants_long, 6) %>%
   kable(caption = "First 6 rows of the long-format table (2016+)")
 ```
@@ -94,14 +88,13 @@ head(contestants_long, 6) %>%
 Next, for the year 2023, we compute the difference between jury points and tele-vote points to see which entries were the most polarizing between the two groups of voters.
 
 ```{r 1.c_diff}
-diff_2023 <- contestants %>%
-  filter(year == 2023) %>%
-  mutate(diff = points_jury_final - points_tele_final) %>%
-  arrange(desc(abs(diff))) %>%
-  select(year, to_country, song, points_jury_final, points_tele_final, diff) %>%
-  slice_head(n = 5)
+diff_2023 <- contestants %>% 
+  filter(year==2023) %>%
+  mutate(diff=points_jury_final-points_tele_final) %>%
+  select(year,song,to_country,points_jury_final,points_tele_final,diff)%>%
+  arrange(desc(abs(diff)))
 
-diff_2023 %>%
+diff_2023 %>% head(5) %>%
   kable(caption = "Top 5 Entries with Largest Jury/Tele-vote Differences in 2023")
 ```
 
@@ -125,7 +118,7 @@ ggplot(top_15_countries, aes(x = total_points, y = reorder(to_country, total_poi
   labs(title = "Top 15 Countries by Total Eurovision Points in Finals",
        x = "Total Points",
        y = "Country") +
-  theme_minimal()
+  theme_classic()
 ```
 
 Sweden, Italy, and the United Kingdom lead the historical rankings in total points, which reflects not only their strong track records of successful performances but also their consistent participation over many decades. Conversely, countries that joined the contest more recently (or have missed many years) have naturally had fewer opportunities to accumulate such massive cumulative point totals.

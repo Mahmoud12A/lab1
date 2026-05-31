@@ -27,8 +27,7 @@ library(knitr)
 url_base <- "https://github.com/Spijkervet/eurovision-dataset/releases/download/2023/"
 contestants <- read.csv(paste0(url_base, "contestants.csv"))
 votes <- read.csv(paste0(url_base, "votes.csv"))
-# Ensure this file is in your working directory if needed
-# GDP_per_capita <- read.csv("GDP.PerCapita.WorldCountries.csv")
+#GDP_per_capita <- read.csv("GDP.PerCapita.WorldCountries.csv")
 ```
 
 ## Question 1: Data Exploration
@@ -41,6 +40,7 @@ In this section, we conduct an initial exploration of the Eurovision datasets. T
 contestants %>% select(year,points_final,points_tele_final,points_jury_final,place_final,to_country,song) %>% head(5) %>%
  kable(caption = "First 5 rows of Contestants dataset")
 contestants%>%select(year,points_final,points_tele_final,points_jury_final,place_final,to_country,song) %>% str()
+contestants %>% head()
 
 ```
 
@@ -49,6 +49,8 @@ contestants%>%select(year,points_final,points_tele_final,points_jury_final,place
 head(votes, 5) %>% 
 kable(caption = "First 5 rows of Votes dataset")
 str(votes)
+votes %>% head(5)
+
 ```
 
 ---
@@ -162,7 +164,7 @@ Winning_scores<- Winning_scores %>% mutate(era = case_when(
     values_to = 'score')
  ggplot(Winning_scores, aes(x=year, y=score)) + 
     geom_line(color="black", linewidth = 1) +
-    geom_point(color="red", size=2) +
+    geom_point(color="black", size=2) +
     geom_vline(xintercept = 1975, linetype="longdash", linewidth=0.5, color="blue") + 
     geom_vline(xintercept = 2016, linetype="longdash", linewidth=0.5, color="blue") +   
     theme_classic() + facet_wrap(~Panel,ncol=1,scales="free_y")+

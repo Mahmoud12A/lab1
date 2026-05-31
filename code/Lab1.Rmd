@@ -38,8 +38,10 @@ In this section, we conduct an initial exploration of the Eurovision datasets. T
 
 #### Contestants Data
 ```{r A.1_contestants,echo=FALSE}
-head(contestants,5) %>% select(year,points_final,points_tele_final,points_jury_final,place_final,to_country,song) %>% 
+contestants %>% select(year,points_final,points_tele_final,points_jury_final,place_final,to_country,song) %>% head(5) %>%
  kable(caption = "First 5 rows of Contestants dataset")
+contestants%>%select(year,points_final,points_tele_final,points_jury_final,place_final,to_country,song) %>% str()
+
 ```
 
 #### Votes Data
@@ -102,16 +104,14 @@ Among the 5 entries with the largest absolute differences in 2023, the public te
 
 ## Question 2: Country-level performance over time
 
-### a.
+### A.
 
 In this step, we calculate the total number of points each country has received in the finals across all years. We then visualize the top 15 countries using a horizontal bar chart.
 
 ```{r 2.a_total_points, fig.height=6, fig.width=8}
 top_15_countries <- contestants %>%
   group_by(to_country) %>%
-  summarize(total_points = sum(points_final, na.rm = TRUE)) %>%
-  arrange(desc(total_points)) %>%
-  slice_head(n = 15)
+  summarize(total_points = sum(points_final, na.rm = TRUE)) %>% arrange(desc(total_points)) %>%slice_head(n = 15)
 
 ggplot(top_15_countries, aes(x = total_points, y = reorder(to_country, total_points))) +
   geom_col(fill = "steelblue") +
@@ -122,3 +122,54 @@ ggplot(top_15_countries, aes(x = total_points, y = reorder(to_country, total_poi
 ```
 
 Sweden, Italy, and the United Kingdom lead the historical rankings in total points, which reflects not only their strong track records of successful performances but also their consistent participation over many decades. Conversely, countries that joined the contest more recently (or have missed many years) have naturally had fewer opportunities to accumulate such massive cumulative point totals.
+
+### B.
+
+
+```{r 2.b, fig.height=6, fig.width=8}
+average_points <- contestants %>% group_by(to_country) %>% filter(!is.na(place_final)) %>% summarize(avg_points=mean(points_final,na.rm=TRUE),
+          appearances= n()) %>% filter(appearances>=10) %>% arrange(desc(avg_points))
+
+ggplot(average_points,aes(x=avg_points)) + geom_histogram(aes(y=after_stat(density)),
+                 bins = 15,binwidth = 15,
+                 fill="steelblue",
+                 color="black",
+                 alpha=0.8) +geom_density(
+  linewidth = 1,
+  color="black"
+) + theme_classic()
+
+Skew_val1<-e1071::skewness(average_points$avg_points)
+Kurt_val1<-e1071::kurtosis(average_points$avg_points)
+
+cat("Skweness =",round(Skew_val1,3),"\n")
+cat("Kurtosis =",round(Kurt_val1,3),"\n")
+```
+### C
+
+```{r 2.c, fig.height=6, fig.width=8}
+Winning_scores<- contestants %>% filter(year>= 1956,!is.na(points_final)) %>% group_by(year)%>% summarize(winning_score=max(points_final,na.rm=TRUE)) 
+
+##ggplot(Winning_scores,aes(x=year,y=winning_score)) + geom_line(color="black",linewidth = 1
+##)+geom_point(color="red",size=2)+theme_classic()+ geom_vline(xintercept = 1975,linetype="longdash",linewidth=0.5,color="blue")+ geom_vline(xintercept = 2016,linetype="longdash",linewidth=0.5,color="blue")
+
+Winning_scores<- Winning_scores %>% mutate(era = case_when(
+  year<1975 ~ "1975" ,
+  year>= 1975 & year<2016~"1975-2015",
+  year>=2016~"2016 and onwards")) %>% group_by(era) %>% mutate(era_max=max(winning_score,na.rm=TRUE),Normalized=winning_score/era_max) %>% ungroup() %>% select(year,"Score"=winning_score,"Normalized Score"=Normalized)%>% pivot_longer(
+    cols = c('Score','Normalized Score'),
+    names_to = 'Panel',
+    values_to = 'score')
+ ggplot(Winning_scores, aes(x=year, y=score)) + 
+    geom_line(color="black", linewidth = 1) +
+    geom_point(color="red", size=2) +
+    geom_vline(xintercept = 1975, linetype="longdash", linewidth=0.5, color="blue") + 
+    geom_vline(xintercept = 2016, linetype="longdash", linewidth=0.5, color="blue") +   
+    theme_classic() + facet_wrap(~Panel,ncol=1,scales="free_y")+
+    labs(
+      title = "Eurovision Winning Scores Over Time",
+      x = "Year",
+      y = "Score"
+    )
+
+```

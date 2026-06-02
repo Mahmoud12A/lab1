@@ -55,7 +55,7 @@ votes %>% head(5)
 
 ```
 
-**Data Types Confirmation:** Based on the `str()` output, the key columns (`year`, `points_final`, `points_jury_final`, `points_tele_final`, and `place_final`) are indeed numeric (integer or double), and textual columns (`to_country`, `song`) are stored as characters. ---
+**Data Types:** Based on the `str()` output, the key columns (`year`, `points_final`, `points_jury_final`, `points_tele_final`, and `place_final`) are numeric variables, and columns (`to_country`, `song`) are stored as characters.
 
 ### B.
 
@@ -125,7 +125,7 @@ ggplot(top_15_countries, aes(x = total_points, y = reorder(to_country, total_poi
   theme_classic()
 ```
 
-Sweden, Italy, and the United Kingdom lead the historical rankings in total points, which reflects not only their strong track records of successful performances but also their consistent participation over many decades. Conversely, countries that joined the contest more recently (or have missed many years) have naturally had fewer opportunities to accumulate such massive cumulative point totals.
+**Points received in finals across all years:**Sweden, Italy, and the United Kingdom lead the historical rankings in total points, which reflects not only their strong track records of successful performances but also their consistent participation over many decades. Conversely, countries that joined the contest more recently (or have missed many years) have naturally had fewer opportunities to accumulate such massive cumulative point totals.
 
 ### B.
 
@@ -137,10 +137,11 @@ ggplot(average_points,aes(x=avg_points)) + geom_histogram(aes(y=after_stat(densi
                  bins = 15,binwidth = 15,
                  fill="steelblue",
                  color="black",
-                 alpha=0.8) +geom_density(
+                 alpha=0.8) +
+  geom_density(
   linewidth = 1,
-  color="black"
-) + theme_classic()
+  color="black") + 
+  theme_classic()
 
 Skew_val1<-e1071::skewness(average_points$avg_points)
 Kurt_val1<-e1071::kurtosis(average_points$avg_points)
@@ -150,8 +151,8 @@ Kurt_val1<-e1071::kurtosis(average_points$avg_points)
 
 ```{r 2, fig.height=6, fig.width=8,results='asis'}
 
-cat("Skewness ($\\tilde{\\mu}_3$) = ", round(Skew_val1, 3), "  \n")
-cat(" ($\\kappa$) = ", round(Kurt_val1, 3), "  \n")
+cat("($\\tilde{\\mu}_3$) = ", round(Skew_val1, 3), "  \n")
+cat("($\\kappa$) = ", round(Kurt_val1, 3), "  \n")
 
 ```
 
@@ -185,17 +186,16 @@ Winning_scores <- Winning_scores %>%
 
 ggplot(Winning_scores, aes(x = year, y = score)) + 
   geom_line(color = "gray", linewidth = 1) +
-  geom_point(aes(color = score), size = 2.5) +
+  geom_point(color="steelblue", size = 2.5) +
   scale_color_viridis_c(guide = "none", option = "C") +
   geom_vline(xintercept = 1975, linetype = "dashed", linewidth = 0.8, color = "darkred") + 
   geom_vline(xintercept = 2016, linetype = "dashed", linewidth = 0.8, color = "darkred") +   
-  theme_minimal(base_size = 14) + 
+  theme_minimal() + 
   theme(
     strip.background = element_rect(fill = "#e0e0e0", color = NA),
     strip.text = element_text(face = "bold", size = 12),
     plot.title = element_text(face = "bold", hjust = 0.5),
-    plot.subtitle = element_text(hjust = 0.5, color = "gray30")
-  ) +
+    plot.subtitle = element_text(hjust = 0.5, color = "gray30")) +
   facet_wrap(~Panel, ncol = 1, scales = "free_y") +
   labs(
     title = "Eurovision Winning Scores Over Time",
@@ -229,7 +229,7 @@ top_pairs <- votes_modern %>%
 top_pairs %>% 
   kable(caption = "Top 15 Voting Pairs from 2016 and upwards:")
 ```
-
+**Voting Pairs:***From the table we can see a strong relationship between Cyprus and Greece which often award the highest points possible to each other.While also at the same time if we look at previous communist countries they often vote for each other, and countries that share a region like Nordic countries and or Balkan countries tend to favor each other in voting rather than other countries from different regions.
 ### B.
 
 ```{r}
@@ -258,7 +258,7 @@ avg_given_15 <- votes_modern %>%
 heatmap_data <- grid_15 %>%
   left_join(avg_given_15, by = c("from_country_id", "to_country_id")) %>%
   mutate(
-    avg_points = ifelse(from_country_id == to_country_id, NA, avg_points)
+    avg_points = if_else(from_country_id == to_country_id, NA, avg_points)
   )
 
 overall_mean <- mean(heatmap_data$avg_points, na.rm = TRUE)
@@ -283,18 +283,20 @@ ggplot(heatmap_data, aes(x = to_country_id, y = from_country_id, fill = avg_poin
   )
 ```
 
+*Points exchange between countries:*There are quite a few asymmetric strikes visible on the heat map. For example, Norway tends to give to its Nordic neighbor Sweden maximum points, however Sweden doesn't return the favor. Australia also gives Sweden high points, while Sweden often spreads its points more broadly. Malta, Spain, and San Marino give high points to Italy, which doesn't reciprocate them back much.
+
 ### C.
 
 ```{r ,fig.height=8, fig.width=10}
-c1 <- "gr" 
-c2 <- "cy" 
+c1 <- "ro" 
+c2 <- "md" 
 
 votes_c1 <- votes %>%
   filter(from_country_id == c1, round == "final") %>%
   group_by(year, to_country_id) %>%
-  summarise(total_points = sum(total_points, na.rm = TRUE)) %>% ungroup()
+  summarize(total_points = sum(total_points, na.rm = TRUE)) %>% ungroup()
 
-gr_to_cy <- votes_c1 %>%
+ro_to_md <- votes_c1 %>%
   filter(to_country_id == c2)
 
 avg_to_others <- votes_c1 %>%
@@ -302,24 +304,20 @@ avg_to_others <- votes_c1 %>%
   summarise(mean_pts = mean(total_points, na.rm = TRUE)) %>%
   pull(mean_pts)
 
-ggplot(gr_to_cy, aes(x = year, y = total_points)) +
-  geom_line(aes(color = "Points to Cyprus"), size = 1) +
-  geom_point(color = "blue", size = 2) +
+ggplot(ro_to_md, aes(x = year, y = total_points)) +
+  geom_line(color ="grey", size = 1) +
+  geom_point(color = "steelblue", size = 1.5) +
   geom_hline(aes(yintercept = avg_to_others, linetype = "Avg to All Others"), color = "red") +
-  scale_color_manual(name = "", values = c("Points to Cyprus" = "blue")) +
   scale_linetype_manual(name = "", values = c("Avg to All Others" = "dashed")) +
-  labs(
-    title = "Eurovision Friendship: Points Given from Greece to Cyprus",
-    x = "Year",
-    y = "Total Points Given"
-  ) +
-  theme_minimal()
+  labs(title = "Eurovision Friendship: Points Given from Romania to Moldova",
+    x = "Years",
+    y = "Points Given over the years") +theme_minimal()
 ```
-
+**Relationship between Romania and Moldova:**The plot above shows a very stable and mutual voting relationship between Romania and Moldova. Romania consistently gives Moldova scores that are considered higher and sometimes even the maximum amount possible,than the average amount it gives to the rest of the countries in the competition, which is nearly zero that is represented by the dashed line above. There are some gaps in years with no points recorded which occurred either because one of the two countries failed to qualify for the final that year, or because they did not participate in the contest at all.
+  
 ## Question 4:
 
 ### A.
-
 ```{r, eval=TRUE}
 GDP_per_capita <- read.delim("GDP.PerCapita.WorldCountries.csv",sep="\t")
 GDP_per_capita <- GDP_per_capita %>% rename(to_country = Country.Name, gdp_2019=X2019)
@@ -330,13 +328,13 @@ combined_contestants_gdp<-left_join(contestants_2016_upwards,GDP_per_capita,by="
 
 
 ggplot(combined_contestants_gdp,aes(x = gdp_2019,y=avg_points)) +
-  geom_point(color="black",size=2)+ geom_text(aes(label = to_country),vjust=-0.8,size = 3)+geom_smooth(method = "lm",se=FALSE,color="green",linetype="solid")+labs(x="GDP Per Capita",y="Average Points",title = "Average Points in Eurovision vs GDP Per Capita for contestants")+theme_classic()
+geom_point(color="black",size=2)+ geom_text(aes(label = to_country),vjust=-0.8,size=3,color="red")+geom_smooth(method = "lm",se=FALSE,color="lightgreen",linetype="solid")+labs(x="GDP Per Capita",y="Average Points",title = "Average Points in Eurovision vs GDP Per Capita for contestants")+ theme_grey()
 
 model<- lm(avg_points~gdp_2019,data = combined_contestants_gdp)
 summary(model)
 ```
 
-**Regression Interpretation:** The intercept ($\approx 102.8$) represents the expected average points for a country with zero GDP. The positive slope ($0.0016$) implies a tiny increase in average points for every unit increase in GDP.However, the $R^2$ is extremely low ($0.096$), indicating GDP explains very little of the variation. Furthermore, the $p$-value ($0.052$) is just above the $0.05$ threshold, meaning GDP per capita is not quite a statistically significant predictor of Eurovision success.
+**Regression Interpretation:** We ran a linear model to see if there's any correlation between a country's wealth predicts its average Eurovision score. The results we got show an intercept around 102.8 and a slope of 0.0016. More importantly, the R-squared value is approximately 0.096 which is extremely low , and the p-value=0.052 which is above the standard of 0.05.All of this means that a country's GDP per capita isn't  statistically significant and it's not a predictor of the a country's success in the competition. 
 
 ### B.
 
@@ -350,42 +348,40 @@ mapCountryData(sPDF, nameColumnToPlot = "avg_points",
                colourPalette = "heat", catMethod = "pretty",
                addLegend = TRUE,
                mapTitle = "Average Eurovision points per finals appearance")
-
 ```
 
-**Geographical Patterns:** The map reveals that Eastern European nations, Scandinavia, and Italy generally score the highest average points, denoted by the hotter colors. Israel is situated at the southeastern extreme of the European map, displaying a moderate historical average compared to the northern powerhouses. Note that Australia is intentionally cut off from this map view due to the applied bounding box.
+**Geographical Patterns:** The map thats used here is the Eurasian map which shows that Eastern European countries, Sweden, and Italy generally have the highest average points, denoted by the hotter colors. Israel is situated in the southeast of the map, displaying a historical average compared to the northern powerhouses. Note that Australia is intentionally cut off from this map view due to the applied bounding box.
 
 ### C.
 
 ```{r 4.c_israel_trends, fig.height=8, fig.width=10}
-     israel_history <- contestants %>%
-       filter(to_country_id == "il", !is.na(place_final)) %>%
-       select(year, place_final, points_final) %>%
-     pivot_longer(
+israel_history <- contestants %>%
+  filter(to_country_id == "il", !is.na(place_final)) %>%
+  select(year, place_final, points_final) %>%
+  pivot_longer(
   cols = c('place_final', 'points_final'),
- names_to = 'metric',
- values_to = 'value'
- ) %>% mutate(metric = ifelse(metric == "place_final", "Final Placement", "Total Points"))
+  names_to = 'metric',
+  values_to = 'value') %>% 
+  mutate(metric = if_else(metric == "place_final", "Final Placement", "Total Points"))
 
 
   ggplot(israel_history, aes(x = year, y = value)) +
-    geom_line(color = "steelblue", linewidth = 1) +
-    geom_point(color = "darkblue", size = 2) +
+    geom_line(color = "grey", linewidth = 1) +
+    geom_point(color = "steelblue", size = 2) +
     geom_vline(xintercept = c(1978, 1979, 1998, 2018), 
-               color = "red", linetype = "dashed", linewidth = 1) +
-    theme_minimal(base_size = 14) +
+    color = "cyan", linetype = "dashed", linewidth = 0.7) +
+    theme_minimal() +
     theme(
-      strip.background = element_rect(fill = "#e0e0e0", color = NA),
+      strip.background = element_rect(fill = "grey"),
       strip.text = element_text(face = "bold", size = 12),
       plot.title = element_text(face = "bold", hjust = 0.5),
-      plot.subtitle = element_text(hjust = 0.5, color = "gray30")
-    ) +
+      plot.subtitle = element_text(hjust = 0.5, color = "darkgray")) +
     facet_wrap(~metric, ncol = 1, scales = "free_y") +
     labs(
       title = "Israel's performances overtime in eurovision",
       subtitle = "The dashed lines show the years where Israel won(1978, 1979, 1998, 2018)",
       x = "Year",
-      y=' '
-    )
+      y=' ')
 
 ```
+**Israels final placements:**Israel's final placements fluctuate over time, always bouncing between wins or low ranks without a consistent trend.However, in recent year the total amount of points have had a sharp increase. This increase in points is caused by the 2016 rule change that separated between jury and televoting scores, basically doubling the total points available in the competition and raising the maximum points achievable.

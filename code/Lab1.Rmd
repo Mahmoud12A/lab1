@@ -35,25 +35,27 @@ votes <- read.csv(paste0(url_base, "votes.csv"))
 ## Question 1: Data Exploration
 
 ### A.
+
 In this section, we conduct an initial exploration of the Eurovision datasets. The `head()` function allows us to view the first few records to understand the data's format, while the `str()` (structure) function provides a technical summary of the variables, including their data types (numeric, character, etc.) and the overall dimensions of the dataframe. This step is crucial for identifying potential data cleaning needs before proceeding with the analysis.
 
 #### Contestants Data
+
 ```{r A.1_contestants, eval=TRUE}
 contestants%>%select(year,points_final,points_tele_final,points_jury_final,place_final,to_country,song) %>% str()
 head(contestants, 5) 
 
 
 ```
+
 #### Votes Data
+
 ```{r A.1_votes}
 str(votes)
 votes %>% head(5)
 
 ```
-**Data Types Confirmation:** Based on the `str()` output, the key columns (`year`, `points_final`, `points_jury_final`,
-         `points_tele_final`, and `place_final`) are indeed numeric (integer or double), and textual columns (`to_country`,
-         `song`) are stored as characters.
----
+
+**Data Types Confirmation:** Based on the `str()` output, the key columns (`year`, `points_final`, `points_jury_final`, `points_tele_final`, and `place_final`) are indeed numeric (integer or double), and textual columns (`to_country`, `song`) are stored as characters. ---
 
 ### B.
 
@@ -74,7 +76,7 @@ Based on this 10-appearance window, Israel's best result was achieving 1st place
 
 ### C.
 
-First, we reshape the points data from 2016 onwards into a long format using `pivot_longer` to separate the point sources (total, jury, and tele-vote). 
+First, we reshape the points data from 2016 onwards into a long format using `pivot_longer` to separate the point sources (total, jury, and tele-vote).
 
 ```{r 1.c_pivot}
 contestants_long <- contestants %>%
@@ -127,7 +129,6 @@ Sweden, Italy, and the United Kingdom lead the historical rankings in total poin
 
 ### B.
 
-
 ```{r 2.b, fig.height=6, fig.width=8}
 average_points <- contestants %>% group_by(to_country) %>% filter(!is.na(place_final)) %>% summarize(avg_points=mean(points_final,na.rm=TRUE),
           appearances= n()) %>% filter(appearances>=10) %>% arrange(desc(avg_points))
@@ -146,10 +147,11 @@ Kurt_val1<-e1071::kurtosis(average_points$avg_points)
 
 
 ```
+
 ```{r 2, fig.height=6, fig.width=8,results='asis'}
 
 cat("Skewness ($\\tilde{\\mu}_3$) = ", round(Skew_val1, 3), "  \n")
-cat("Kurtosis ($\\kappa$) = ", round(Kurt_val1, 3), "  \n")
+cat(" ($\\kappa$) = ", round(Kurt_val1, 3), "  \n")
 
 ```
 
@@ -207,10 +209,10 @@ ggplot(Winning_scores, aes(x = year, y = score)) +
 
 **Observations on Rule Changes:** The introduction of the "12 points" system in 1975 caused a visible jump in maximum possible points. In 2016, splitting the jury and tele-vote points essentially doubled the total points available, causing another massive spike in raw scores. However, the normalized panel reveals that the relative dominance of winning songs remains comparable and consistent across all eras despite the underlying point inflation.
 
+## Question 3:
 
-## 3
- 
 ### A.
+
 ```{r, eval=TRUE}
 
 votes_modern <- votes %>%
@@ -219,25 +221,23 @@ votes_modern <- votes %>%
 top_pairs <- votes_modern %>%
   group_by(from_country_id, to_country_id) %>%
   summarise(
-    n_years = n(),
-    avg_points = mean(total_points),
-    .groups = "drop"
-  ) %>%
-  filter(n_years >= 5) %>%
+  years = n(),
+  avg_points = mean(total_points)) %>% ungroup() %>% filter(years >= 5) %>%
   arrange(desc(avg_points)) %>%
   slice_head(n = 15)
 
-print("Top 15 Voting Pairs (2016 onwards):")
-print(top_pairs)
+top_pairs %>% 
+  kable(caption = "Top 15 Voting Pairs from 2016 and upwards:")
 ```
 
 ### B.
+
 ```{r}
 
 top_15_countries <- contestants %>%
   filter(year >= 2016) %>%
   group_by(to_country_id) %>%
-  summarise(total_received = sum(points_final, na.rm = TRUE), .groups = "drop") %>%
+  summarise(total_received = sum(points_final, na.rm = TRUE)) %>% ungroup() %>%
   arrange(desc(total_received)) %>%
   slice_head(n = 15) %>%
   pull(to_country_id)
@@ -252,7 +252,7 @@ grid_15 <- expand.grid(
 avg_given_15 <- votes_modern %>%
   filter(from_country_id %in% top_15_countries, to_country_id %in% top_15_countries) %>%
   group_by(from_country_id, to_country_id) %>%
-  summarise(avg_points = mean(total_points), .groups = "drop")
+  summarise(avg_points = mean(total_points)) %>% ungroup()
 
 
 heatmap_data <- grid_15 %>%
@@ -266,15 +266,15 @@ overall_mean <- mean(heatmap_data$avg_points, na.rm = TRUE)
 ggplot(heatmap_data, aes(x = to_country_id, y = from_country_id, fill = avg_points)) +
   geom_tile(color = "white") +
   scale_fill_gradient2(
-    low = "blue", mid = "white", high = "red",
+    low = "lightgreen", mid = "green", high = "darkgreen",
     midpoint = overall_mean,
-    na.value = "grey90", # Colors NA values (including the diagonal) clearly
+    na.value = "darkgrey", # Colors NA values (including the diagonal) clearly
     name = "Avg Points"
   ) +
   labs(
     title = "Average Points Exchanged Between Top 15 Eurovision Countries (2016+)",
-    x = "Receiver (to_country_id)",
-    y = "Giver (from_country_id)"
+    x = "Votes receiver",
+    y = "Votes giver"
   ) +
   theme_minimal() +
   theme(
@@ -283,10 +283,43 @@ ggplot(heatmap_data, aes(x = to_country_id, y = from_country_id, fill = avg_poin
   )
 ```
 
+### C.
 
-## 4
+```{r ,fig.height=8, fig.width=10}
+c1 <- "gr" 
+c2 <- "cy" 
+
+votes_c1 <- votes %>%
+  filter(from_country_id == c1, round == "final") %>%
+  group_by(year, to_country_id) %>%
+  summarise(total_points = sum(total_points, na.rm = TRUE)) %>% ungroup()
+
+gr_to_cy <- votes_c1 %>%
+  filter(to_country_id == c2)
+
+avg_to_others <- votes_c1 %>%
+  filter(to_country_id != c2) %>%
+  summarise(mean_pts = mean(total_points, na.rm = TRUE)) %>%
+  pull(mean_pts)
+
+ggplot(gr_to_cy, aes(x = year, y = total_points)) +
+  geom_line(aes(color = "Points to Cyprus"), size = 1) +
+  geom_point(color = "blue", size = 2) +
+  geom_hline(aes(yintercept = avg_to_others, linetype = "Avg to All Others"), color = "red") +
+  scale_color_manual(name = "", values = c("Points to Cyprus" = "blue")) +
+  scale_linetype_manual(name = "", values = c("Avg to All Others" = "dashed")) +
+  labs(
+    title = "Eurovision Friendship: Points Given from Greece to Cyprus",
+    x = "Year",
+    y = "Total Points Given"
+  ) +
+  theme_minimal()
+```
+
+## Question 4:
 
 ### A.
+
 ```{r, eval=TRUE}
 GDP_per_capita <- read.delim("GDP.PerCapita.WorldCountries.csv",sep="\t")
 GDP_per_capita <- GDP_per_capita %>% rename(to_country = Country.Name, gdp_2019=X2019)
@@ -302,9 +335,11 @@ ggplot(combined_contestants_gdp,aes(x = gdp_2019,y=avg_points)) +
 model<- lm(avg_points~gdp_2019,data = combined_contestants_gdp)
 summary(model)
 ```
-**Regression Interpretation:** The intercept ($\approx 102.8$) represents the expected average points for a country
-with zero GDP. The positive slope ($0.0016$) implies a tiny increase in average points for every unit increase in GDP.However, the $R^2$ is extremely low ($0.096$), indicating GDP explains very little of the variation. Furthermore, the $p$-value ($0.052$) is just above the $0.05$ threshold, meaning GDP per capita is not quite a statistically significant predictor of Eurovision success.
+
+**Regression Interpretation:** The intercept ($\approx 102.8$) represents the expected average points for a country with zero GDP. The positive slope ($0.0016$) implies a tiny increase in average points for every unit increase in GDP.However, the $R^2$ is extremely low ($0.096$), indicating GDP explains very little of the variation. Furthermore, the $p$-value ($0.052$) is just above the $0.05$ threshold, meaning GDP per capita is not quite a statistically significant predictor of Eurovision success.
+
 ### B.
+
 ```{r, eval=TRUE,results='hide'}
 country_avg<- contestants %>% filter(!is.na(points_final))%>%group_by(to_country_id)%>%summarize(avg_points=mean(points_final),apperances=n()) %>% filter(apperances>=3) %>% mutate(iso2=toupper(to_country_id))
 sPDF <- joinCountryData2Map(country_avg, joinCode = "ISO2",
@@ -321,22 +356,23 @@ mapCountryData(sPDF, nameColumnToPlot = "avg_points",
 **Geographical Patterns:** The map reveals that Eastern European nations, Scandinavia, and Italy generally score the highest average points, denoted by the hotter colors. Israel is situated at the southeastern extreme of the European map, displaying a moderate historical average compared to the northern powerhouses. Note that Australia is intentionally cut off from this map view due to the applied bounding box.
 
 ### C.
- 
+
 ```{r 4.c_israel_trends, fig.height=8, fig.width=10}
-# 1. Filter for Israel's final appearances
- israel_history <- contestants %>% filter(to_country_id=="il",!is.na(place_final)) %>%
-  select(year, place_final, points_final) %>%
-  pivot_longer(
+     israel_history <- contestants %>%
+       filter(to_country_id == "il", !is.na(place_final)) %>%
+       select(year, place_final, points_final) %>%
+     pivot_longer(
   cols = c('place_final', 'points_final'),
-  names_to = 'metric',
-  values_to = 'value') %>%
-  mutate(metric = ifelse(metric == "place_final", "Final Placement", "Total Points"))
- 
+ names_to = 'metric',
+ values_to = 'value'
+ ) %>% mutate(metric = ifelse(metric == "place_final", "Final Placement", "Total Points"))
+
+
   ggplot(israel_history, aes(x = year, y = value)) +
     geom_line(color = "steelblue", linewidth = 1) +
     geom_point(color = "darkblue", size = 2) +
     geom_vline(xintercept = c(1978, 1979, 1998, 2018), 
-               color = "darkgoldenrod", linetype = "dashed", linewidth = 1) +
+               color = "red", linetype = "dashed", linewidth = 1) +
     theme_minimal(base_size = 14) +
     theme(
       strip.background = element_rect(fill = "#e0e0e0", color = NA),
@@ -346,11 +382,10 @@ mapCountryData(sPDF, nameColumnToPlot = "avg_points",
     ) +
     facet_wrap(~metric, ncol = 1, scales = "free_y") +
     labs(
-      title = "Israel's Eurovision Performance Over Time",
-      subtitle = "Dashed gold lines indicate winning years (1978, 1979, 1998, 2018)",
+      title = "Israel's performances overtime in eurovision",
+      subtitle = "The dashed lines show the years where Israel won(1978, 1979, 1998, 2018)",
       x = "Year",
-      y = ""
+      y=' '
     )
-```
 
- 
+```
